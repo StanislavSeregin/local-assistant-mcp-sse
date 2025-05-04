@@ -17,9 +17,10 @@ public class Program
         });
 
         builder.Services
+            .AddFSTool(builder.Configuration)
             .AddMcpServer()
             .WithHttpTransport()
-            .WithTools<EchoTool>();
+            .WithToolsFromAssembly();
 
         var app = builder.Build();
         app.MapMcp();
