@@ -35,8 +35,9 @@ public class DynamicDescription : DescriptionAttribute
         separator: Environment.NewLine,
         values:
         [
-            "Analyze the current context and determine which of the following instructions you will need.",
-            "The instructions are very important and must be followed.",
+            "Analyze the task context and descriptions of instructions.",
+            "Use the instructions from the list if the task mentions concepts from the description.",
+            "Be sure to request the necessary instructions to complete the task.",
             "Available instructions:",
             .. SimplePromptStorage.PromptDict.Select(kvp => $"- [{kvp.Key}]: {kvp.Value.Description}")
         ]);
@@ -55,7 +56,7 @@ public static class SimplePromptStorage
     {
         /* PlantUML */
         {
-            "PlantUML", new Prompt("Describes how to work with PlantUML sequence diagrams", """
+            "PlantUML", new Prompt("PlantUML sequence diagram", """
                 При работе с диаграммами последовательностей PlantUML необходимо использовать специальную нотацию:
                 - Для описания входящих запросов использовать `->`, указывать путь эндпоинта с указанием метода и при необходимости описывать тип запроса
                 - Для описания ответов использовать `-->`, кратко указывать что будет возвращено и при необходимости описывать тип ответа
@@ -92,7 +93,7 @@ public static class SimplePromptStorage
         },
         /* MongoDB */
         {
-            "MongoDB", new Prompt("Describes how to work with MongoDB using C#", """
+            "MongoDB", new Prompt("MongoDB using C#", """
                 Эта инструкция объясняет на примере, как использовать MongoDB в C#:
                 - Пример описания дата класса:
                 ```csharp
@@ -157,11 +158,13 @@ public static class SimplePromptStorage
                     .Limit(500)
                     .ToListAsync(cancellationToken);
                 ```
+
+                - Примечания: Всегда явно описывай дата классы на основе исходной информации, даже если информации недостаточно! Запрещается переиспользовать дата классы MongoDB вне контекста MongoDB!
                 """)
         },
         /* LiteDB */
         {
-            "LiteDB", new Prompt("Describes how to work with embedded database using C#", """
+            "LiteDB", new Prompt("Embedded database using C#", """
                 - Пример описания дата класса:
                 ```csharp
                 using System;
@@ -189,7 +192,7 @@ public static class SimplePromptStorage
                 using System;
                 using LiteDB;
 
-                var db = new LiteDatabase(./data.db);
+                using var db = new LiteDatabase(./data.db);
                 var collection = db.GetCollection<ExampleDataEntity>();
 
                 collection.EnsureIndex(x => x.Id, true);
@@ -214,6 +217,37 @@ public static class SimplePromptStorage
                 - Пример обновления элемента в коллекции:
                 ```csharp
                 collection.Upsert(entity);
+                ```
+
+                - Примечания: Всегда явно описывай дата классы на основе исходной информации, даже если информации недостаточно! Запрещается переиспользовать дата классы LiteDB вне контекста LiteDB!
+                """)
+        },
+        /* Jupyter Notebook */
+        {
+            "Notebook", new Prompt("\"Notebook\", \"Jupyter Notebook\", \"Dotnet Interactive\" or \"Polyglot\"", """
+                - Файл представляет из себя разновидность Jupyter Notebook, поддерживающий dotnet и должен иметь расширение `.dib`
+                - Секция Markdown объявляется строкой `#!markdown`, после которой следует описание в этом формате
+                - Секция C# кода объявляется строкой `#!csharp`, после которой следует C# код
+                - Для вывода результатов всегда использовать статический метод `display(object payload);`
+                - Если необходимы сторонние пакеты, то они должны быть перечислены в отдельном блоке C# кода, например `#r "nuget: MongoDB.Driver"`.
+                - Запрещается устанавливать дополнительные пакеты для обеспечения поддержки Jupyter Notebook в .NET, так как они включены неявно по умолчанию
+                - Пример:
+                ```dib
+                #!markdown
+
+                ## Заголовок
+
+                #!csharp
+
+                // Пример установки nuget пакетов
+                #r "nuget: LiteDB"
+                #r "nuget: MongoDB.Driver"
+
+                #!csharp
+
+                // Основное тело скрипта
+                var someText = "asdf";
+                display(someText);
                 ```
                 """)
         }
