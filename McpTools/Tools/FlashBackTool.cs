@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
-namespace LocalAssistant.Tools;
+namespace McpTools.Tools;
 
 [McpServerToolType]
 public class FlashBackTool
@@ -24,7 +24,7 @@ public class FlashBackTool
 
         return SimplePromptStorage.PromptDict.TryGetValue(filteredName, out var instruction)
             ? instruction.Text
-            : "Instruction not found.";
+            : "Instruction not found. Use your own discretion.";
     }
 }
 

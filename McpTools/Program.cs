@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
+﻿using McpTools.Tools;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 
-namespace LocalAssistant;
+namespace McpTools;
 
 public class Program
 {
@@ -17,10 +17,13 @@ public class Program
         });
 
         builder.Services
-            .Configure<Settings>(builder.Configuration.GetSection(nameof(Settings)))
-            .AddHostedService<TestService>();
+            .AddFSTool(builder.Configuration)
+            .AddMcpServer()
+            .WithHttpTransport()
+            .WithToolsFromAssembly();
 
         var app = builder.Build();
+        app.MapMcp();
         return app.RunAsync();
     }
 }

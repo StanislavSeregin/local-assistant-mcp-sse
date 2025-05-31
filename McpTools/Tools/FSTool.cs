@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LocalAssistant.Tools;
+namespace McpTools.Tools;
 
 public class FSToolSettings
 {
@@ -106,8 +106,8 @@ public class FSTool(
         Folders will be created if they do not exist.
         """)]
     public async Task<string> WriteFile(
-        [Description("Path to file.")] string filePath,
-        [Description("UTF-8 encoding content. Should be starts with './'.")] string content,
+        [Description("Path to file, should be starts with './'.")] string filePath,
+        [Description("UTF-8 encoding content.")] string content,
         CancellationToken cancellationToken)
     {
         logger.LogInformation("Path is {filePath}", filePath);
