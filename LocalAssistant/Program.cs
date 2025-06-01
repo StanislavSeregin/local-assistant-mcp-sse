@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace LocalAssistant;
 
+[Experimental("SKEXP0001")]
 public class Program
 {
     static Task Main(string[] args)
