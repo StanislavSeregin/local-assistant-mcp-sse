@@ -2,10 +2,8 @@
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using ModelContextProtocol.Client;
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +11,9 @@ using System.Threading.Tasks;
 namespace LocalAssistant;
 
 [Experimental("SKEXP0001")]
-public class TestService(IOptions<Settings> optionsSettings) : BackgroundService
+public class TestService(
+    McpMiddlewareKernelFunctions mcpMiddlewareKernelFunctions,
+    IOptions<Settings> optionsSettings) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -29,20 +29,7 @@ public class TestService(IOptions<Settings> optionsSettings) : BackgroundService
                 httpClient: httpClient)
             .Build();
 
-        var sseClientTransportOptions = new SseClientTransportOptions()
-        {
-            Name = "SomeTools",
-            Endpoint = new Uri("http://localhost:3001/sse")
-        };
-
-        await using IMcpClient mcpClient = await McpClientFactory.CreateAsync(
-            new SseClientTransport(sseClientTransportOptions),
-            cancellationToken: stoppingToken);
-
-        var tools = await mcpClient.ListToolsAsync(cancellationToken: stoppingToken);
-        kernel.Plugins.AddFromFunctions(
-            "SomeTools",
-            tools.Select(aiFunction => aiFunction.AsKernelFunction()));
+        kernel.Plugins.AddFromObject(mcpMiddlewareKernelFunctions);
 
         var executionSettings = new OpenAIPromptExecutionSettings()
         {
@@ -50,7 +37,8 @@ public class TestService(IOptions<Settings> optionsSettings) : BackgroundService
             FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(options: new() { RetainArgumentTypes = true })
         };
 
-        var prompt = "Hello! How are you?";
+        var prompt = "/no_think Hello! Call test tool";
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
         await foreach (var content in kernel.InvokePromptStreamingAsync(prompt, new(executionSettings), cancellationToken: stoppingToken))
         {
             Console.Write(content);
