@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
 using ModelContextProtocol.Client;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,20 +16,21 @@ public class Program
 {
     static async Task Main(string[] args)
     {
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
         var builder = WebApplication.CreateBuilder(args);
         builder.Logging.AddConsole(consoleLogOptions =>
         {
             consoleLogOptions.LogToStandardErrorThreshold = LogLevel.Trace;
         });
 
-        await AddMcpClientsAndTools(
+        await AddMcpToolsAsKernelFunctions(
             builder.Services,
             async ct => [await CreateLocalSseMcpClient(ct)],
             CancellationToken.None);
 
         builder.Services
             .Configure<Settings>(builder.Configuration.GetSection(nameof(Settings)))
-            .AddSingleton<McpMiddlewareKernelFunctions>()
+            .AddSingleton<McpFlow>()
             .AddHostedService<TestService>();
 
         var app = builder.Build();
@@ -35,9 +38,9 @@ public class Program
     }
 
     /// <summary>
-    /// Register all MCP clients and tools from clients
+    /// Register all MCP clients then map to kernel functions
     /// </summary>
-    private static async Task AddMcpClientsAndTools(
+    private static async Task AddMcpToolsAsKernelFunctions(
         IServiceCollection services,
         Func<CancellationToken, Task<IMcpClient[]>> mcpClientFactory,
         CancellationToken cancellationToken)
@@ -46,9 +49,10 @@ public class Program
         {
             services.AddSingleton(mcpClient);
             var tools = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken);
-            foreach (var tool in tools)
+            var kernelFunctions = tools.Select(tool => tool.AsKernelFunction());
+            foreach (var kernelFunction in kernelFunctions)
             {
-                services.AddSingleton(tool);
+                services.AddSingleton(kernelFunction);
             }
         }
     }

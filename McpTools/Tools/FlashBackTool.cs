@@ -35,8 +35,7 @@ public class DynamicDescription : DescriptionAttribute
         separator: Environment.NewLine,
         values:
         [
-            "Analyze the task context and descriptions of instructions.",
-            "Use the instructions from the list if the task mentions concepts from the description.",
+            "You must use the instructions from the list if the task mentions concepts from the description.",
             "Be sure to request the necessary instructions to complete the task.",
             "Available instructions:",
             .. SimplePromptStorage.PromptDict.Select(kvp => $"- [{kvp.Key}]: {kvp.Value.Description}")
