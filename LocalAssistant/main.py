@@ -3,37 +3,28 @@ from typing import Annotated, TypedDict
 
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import AnyMessage, add_messages
 from langgraph.prebuilt import ToolNode
 
+from mcp import ClientSession
+from mcp.client.sse import sse_client
+from langchain_mcp_adapters.tools import load_mcp_tools
+
 OLLAMA_MODEL="qwen3:30b-a3b-q8_0"
-OLLAMA_URL="http://host.docker.internal:11434"
+OLLAMA_URL="http://host.docker.internal:11434/v1"
+MCP_URL="http://host.docker.internal:3001/sse"
+
+TEST_PROMPT="Display files listing from disk"
 
 class GraphState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
 
-@tool
-def get_weather() -> str:
-    """Inform the user that the weather is 15°C and it would rain and throw a joke in there also, but keep it brief 20 words max."""
-    return "Inform the user that the weather is 15°C and it would rain and throw a joke in there also, but keep it brief 20 words max."
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """
-            You are a helpful AI assistant specializing in weather. Provide accurate and clear weather information,
-            forecasts, and safety tips based on user input. Offer localized details when provided with a location and
-            explain weather phenomena concisely. If information is unclear or unavailable, ask for clarification. Be 
-            user-friendly and reliable. DO NOT respond with more than 20 words.
-            """,
-        ),
-        ("placeholder", "{messages}"),
-    ]
-)
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "/no_think You are a helpful AI"),
+    ("placeholder", "{messages}")
+])
 
 def build_graph(agent, tools):
     async def call_model(state, config):
@@ -51,7 +42,6 @@ def build_graph(agent, tools):
     builder.add_conditional_edges("agent", should_continue, ["tools", END])
     builder.add_edge("tools", "agent")
     builder.add_edge("agent", END)
-
     return builder.compile()
 
 
@@ -64,16 +54,19 @@ async def run_graph(input_message, agent, tools):
 
 async def test_chatopenai_with_tools():
     llm = ChatOpenAI(
-        base_url=OLLAMA_URL + "/v1",
+        base_url=OLLAMA_URL,
         model=OLLAMA_MODEL,
         temperature=0.1,
         api_key="ollama"
     )
 
-    tools = [get_weather]
-    agent = prompt | llm.bind_tools(tools)
-    async for msg in run_graph("What's the weather like in Tokyo?", agent, tools):
-        print(msg, end="|", flush=True)
+    async with sse_client(url=MCP_URL) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            mcp_tools = await load_mcp_tools(session)
+            agent = prompt | llm.bind_tools(mcp_tools)
+            async for msg in run_graph(TEST_PROMPT, agent, mcp_tools):
+                print(msg, end="", flush=True)
 
 if __name__ == "__main__":
     async def main():
