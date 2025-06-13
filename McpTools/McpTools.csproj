@@ -10,4 +10,8 @@
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RoslynAnalyzer\RoslynAnalyzer.csproj" />
+  </ItemGroup>
+
 </Project>
