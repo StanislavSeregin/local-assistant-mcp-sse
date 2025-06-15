@@ -1,34 +1,46 @@
 from typing import Annotated, AsyncGenerator, TypedDict
 
-from langchain_core.tools import BaseTool
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import AnyMessage, add_messages
 from langgraph.prebuilt import ToolNode
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
 class GraphState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
 
 class AgentManager:
-    def __init__(self, ollama_url: str, ollama_model: str, tools: list[BaseTool]):
-        self.ollama_url = ollama_url
-        self.ollama_model = ollama_model
-        self.llm = ChatOpenAI(
-            base_url=self.ollama_url,
-            model=self.ollama_model,
-            temperature=0.1,
-            api_key="ollama"
-        )
+    def __init__(self, open_ai_url: str, model_name: str, api_key: str, temperature: float, system_prompt: str, mcp_url: str):
+        self.open_ai_url = open_ai_url
+        self.model_name = model_name
+        self.api_key = api_key
+        self.temperature = temperature
+        self.system_prompt = system_prompt
+        self.mcp_url = mcp_url
+        self.llm = None
         self.agent = None
         self.app = None
 
+    async def initialize(self):
+        self.llm = ChatOpenAI(
+            base_url=self.open_ai_url,
+            model=self.model_name,
+            temperature=self.temperature,
+            api_key=self.api_key
+        )
+        client = MultiServerMCPClient({
+            "default_server": {
+                "transport": "sse",
+                "url": self.mcp_url
+            }
+        })
+        tools = await client.get_tools()
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "/no_think You are a helpful AI"),
+            ("system", self.system_prompt),
             ("placeholder", "{messages}")
         ])
-
         self.agent = prompt | self.llm.bind_tools(tools)
         self.app = self._build_graph(self.agent, tools)
 
@@ -53,7 +65,6 @@ class AgentManager:
     async def process_message(self, message: str) -> AsyncGenerator[str, None]:
         if not self.app:
             raise RuntimeError("Agent not initialized")
-
         inputs = {"messages": [HumanMessage(content=message, name="user")]}
         async for msg, metadata in self.app.astream(inputs, stream_mode="messages"):
             if msg.content and not isinstance(msg, HumanMessage):
