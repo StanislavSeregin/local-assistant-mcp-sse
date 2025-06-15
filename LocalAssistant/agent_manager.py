@@ -1,6 +1,6 @@
-from typing import Annotated, AsyncGenerator, TypedDict
+from typing import Annotated, AsyncGenerator, TypedDict, List
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
@@ -55,18 +55,23 @@ class AgentManager:
             return "tools" if last_message.tool_calls else END
 
         builder = StateGraph(GraphState)
+        builder.add_edge(START, "agent")
         builder.add_node("agent", call_model)
         builder.add_node("tools", ToolNode(tools))
-        builder.add_edge(START, "agent")
         builder.add_conditional_edges("agent", should_continue, ["tools", END])
         builder.add_edge("tools", "agent")
         builder.add_edge("agent", END)
         return builder.compile()
 
-    async def process_message(self, message: str) -> AsyncGenerator[str, None]:
+    async def process_message(self, message: str, history: List[BaseMessage]) -> AsyncGenerator[str, None]:
         if not self.app:
             raise RuntimeError("Agent not initialized")
-        inputs = {"messages": [HumanMessage(content=message, name="user")]}
+        
+        history.append(HumanMessage(content=message, name="user"))
+        inputs = {"messages": history}
         async for msg, metadata in self.app.astream(inputs, stream_mode="messages"):
             if msg.content and not isinstance(msg, HumanMessage):
                 yield msg.content
+    
+    def put_response_to_history(self, history: List[BaseMessage], response: str):
+        history.append(AIMessage(content=response))

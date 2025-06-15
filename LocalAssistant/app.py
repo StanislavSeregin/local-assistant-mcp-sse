@@ -15,6 +15,8 @@ async def startup():
     st.title("AI Assistant")
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    if "history" not in st.session_state:
+        st.session_state.history = []
     if "agent" not in st.session_state:
         st.session_state.agent = await AgentManager(
             open_ai_url=OPEN_AI_URL,
@@ -42,10 +44,11 @@ async def handle_chat_input():
         with st.chat_message("assistant"):
             response_placeholder = st.empty()
             full_response = ""
-            async for chunk in st.session_state.agent.process_message(user_input):
+            async for chunk in st.session_state.agent.process_message(user_input, st.session_state.history):
                 full_response += chunk
                 response_placeholder.markdown(full_response)
             
+            st.session_state.agent.put_response_to_history(st.session_state.history, full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 async def main():
