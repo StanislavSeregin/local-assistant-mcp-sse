@@ -17,7 +17,6 @@ public class Program
         });
 
         builder.Services
-            .AddHostedService<TestHostedService>()
             .AddFSTool(builder.Configuration)
             .AddMcpServer()
             .WithHttpTransport()
