@@ -27,22 +27,23 @@ class AgentManager:
         self.llm = ChatOpenAI(
             base_url=self.open_ai_url,
             model=self.model_name,
-            temperature=self.temperature,
-            api_key=self.api_key
+            api_key=self.api_key,
+            temperature=self.temperature
         )
-        client = MultiServerMCPClient({
+        mcp_client = MultiServerMCPClient({
             "default_server": {
                 "transport": "sse",
                 "url": self.mcp_url
             }
         })
-        tools = await client.get_tools()
+        tools = await mcp_client.get_tools()
         prompt = ChatPromptTemplate.from_messages([
             ("system", self.system_prompt),
             ("placeholder", "{messages}")
         ])
         self.agent = prompt | self.llm.bind_tools(tools)
         self.app = self._build_graph(self.agent, tools)
+        return self
 
     def _build_graph(self, agent, tools):
         async def call_model(state, config):
