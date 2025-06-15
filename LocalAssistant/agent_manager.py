@@ -69,9 +69,11 @@ class AgentManager:
         
         history.append(HumanMessage(content=message, name="user"))
         inputs = {"messages": history}
+        full_response = ""
         async for msg, metadata in self.app.astream(inputs, stream_mode="messages"):
             if msg.content and not isinstance(msg, HumanMessage):
+                full_response += msg.content
                 yield msg.content
+
+        history.append(AIMessage(content=full_response))
     
-    def put_response_to_history(self, history: List[BaseMessage], response: str):
-        history.append(AIMessage(content=response))
