@@ -25,6 +25,7 @@ class Assistant:
 
     async def initialize(self):
         model = ChatOllama(
+            client_kwargs={"headers": {"Connection": "close"}},
             base_url=self.open_ai_url,
             model=self.model_name,
             api_key=self.api_key,
