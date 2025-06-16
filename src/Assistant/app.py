@@ -6,6 +6,7 @@ from assistant import Assistant
 
 load_dotenv()
 
+
 async def startup():
     st.title("Helpful assistant")
     if "assistant" not in st.session_state:
@@ -17,6 +18,7 @@ async def startup():
             system_prompt=os.environ['SYSTEM_PROMPT'],
             mcp_url=os.environ['MCP_URL']
         ).initialize()
+
 
 def render_chat_history():
     for message in st.session_state.assistant.history:
@@ -51,6 +53,7 @@ def render_chat_history():
                         "```"
                     ))
 
+
 async def handle_chat_input():
     if user_input := st.chat_input("What would you like to ask?"):
         if not user_input.strip():
@@ -67,6 +70,7 @@ async def handle_chat_input():
                 response_placeholder.markdown(full_response)
 
         st.rerun()
+
 
 async def main():
     await startup()

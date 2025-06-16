@@ -5,6 +5,7 @@ from assistant import Assistant
 
 load_dotenv()
 
+
 async def main():
     assistant = await Assistant(
         open_ai_url=os.environ['OPEN_AI_URL'],
@@ -15,7 +16,7 @@ async def main():
         mcp_url=os.environ['MCP_URL']
     ).initialize()
 
-    inputs = ["Display files from work directory"]
+    inputs = ["Display files from work directory and display source of each file"]
     for input in inputs:
         print(input)
         async for chunk in assistant.process_message(input):
