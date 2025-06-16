@@ -1,6 +1,6 @@
-from typing import Annotated, AsyncGenerator, TypedDict, List
+from typing import Annotated, AsyncGenerator, TypedDict
 
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph

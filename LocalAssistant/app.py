@@ -1,25 +1,21 @@
+import os
 import asyncio
 import streamlit as st
-
+from dotenv import load_dotenv
 from agent_manager import AgentManager
 
-MCP_URL = "http://host.docker.internal:3001/sse"
-OPEN_AI_URL = "http://host.docker.internal:11434/v1"
-MODEL_NAME = "qwen3:30b-a3b-q8_0"
-API_KEY = "ollama"
-TEMPERATURE = 0.1
-SYSTEM_PROMPT = "/no_think You are a helpful AI"
+load_dotenv()
 
 async def startup():
     st.title("Helpful assistant")
     if "agent" not in st.session_state:
         st.session_state.agent = await AgentManager(
-            open_ai_url=OPEN_AI_URL,
-            model_name=MODEL_NAME,
-            api_key=API_KEY,
-            temperature=TEMPERATURE,
-            system_prompt=SYSTEM_PROMPT,
-            mcp_url=MCP_URL
+            open_ai_url=os.environ['OPEN_AI_URL'],
+            model_name=os.environ['MODEL_NAME'],
+            api_key=os.environ['API_KEY'],
+            temperature=os.environ['TEMPERATURE'],
+            system_prompt=os.environ['SYSTEM_PROMPT'],
+            mcp_url=os.environ['MCP_URL']
         ).initialize()
 
 def display_previous_messages():
