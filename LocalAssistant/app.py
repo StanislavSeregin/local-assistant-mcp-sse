@@ -3,7 +3,6 @@ import streamlit as st
 
 from agent_manager import AgentManager
 
-# Configuration
 MCP_URL = "http://host.docker.internal:3001/sse"
 OPEN_AI_URL = "http://host.docker.internal:11434/v1"
 MODEL_NAME = "qwen3:30b-a3b-q8_0"
@@ -12,9 +11,7 @@ TEMPERATURE = 0.1
 SYSTEM_PROMPT = "/no_think You are a helpful AI"
 
 async def startup():
-    st.title("AI Assistant")
-    if "history" not in st.session_state:
-        st.session_state.history = []
+    st.title("Helpful assistant")
     if "agent" not in st.session_state:
         st.session_state.agent = await AgentManager(
             open_ai_url=OPEN_AI_URL,
@@ -26,7 +23,7 @@ async def startup():
         ).initialize()
 
 def display_previous_messages():
-    for message in st.session_state.history:
+    for message in st.session_state.agent.history:
         match message.type:
             case "human":
                 with st.chat_message("user"):
@@ -46,7 +43,7 @@ async def handle_chat_input():
         with st.chat_message("assistant"):
             response_placeholder = st.empty()
             full_response = ""
-            async for chunk in st.session_state.agent.process_message(user_input, st.session_state.history):
+            async for chunk in st.session_state.agent.process_message(user_input):
                 full_response += chunk
                 response_placeholder.markdown(full_response)
 

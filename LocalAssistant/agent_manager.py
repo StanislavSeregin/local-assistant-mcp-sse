@@ -19,6 +19,7 @@ class AgentManager:
         self.temperature = temperature
         self.system_prompt = system_prompt
         self.mcp_url = mcp_url
+        self.history = []
         self.llm = None
         self.agent = None
         self.app = None
@@ -52,7 +53,10 @@ class AgentManager:
 
         def should_continue(state):
             last_message = state["messages"][-1]
-            return "tools" if last_message.tool_calls else END
+            if not last_message.tool_calls:
+                return END
+            else:
+                return "tools"
 
         builder = StateGraph(GraphState)
         builder.add_edge(START, "agent")
@@ -63,17 +67,17 @@ class AgentManager:
         builder.add_edge("agent", END)
         return builder.compile()
 
-    async def process_message(self, message: str, history: List[BaseMessage]) -> AsyncGenerator[str, None]:
+    async def process_message(self, message: str) -> AsyncGenerator[str, None]:
         if not self.app:
             raise RuntimeError("Agent not initialized")
         
-        history.append(HumanMessage(content=message, name="user"))
-        inputs = {"messages": history}
+        self.history.append(HumanMessage(content=message, name="user"))
+        inputs = {"messages": self.history}
         full_response = ""
         async for msg, metadata in self.app.astream(inputs, stream_mode="messages"):
             if msg.content and not isinstance(msg, HumanMessage):
                 full_response += msg.content
                 yield msg.content
 
-        history.append(AIMessage(content=full_response))
+        self.history.append(AIMessage(content=full_response))
     
