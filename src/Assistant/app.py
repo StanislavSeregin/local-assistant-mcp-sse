@@ -63,9 +63,11 @@ async def handle_chat_input():
             st.markdown(user_input)
 
         with st.chat_message("assistant"):
+            status = st.status("Thinking...")
             full_response = ""
             response_placeholder = st.empty()
             async for chunk in st.session_state.assistant.process_message(user_input):
+                status.update(label="Generating...")
                 full_response += chunk
                 response_placeholder.markdown(full_response)
 

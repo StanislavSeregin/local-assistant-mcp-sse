@@ -29,7 +29,9 @@ class Assistant:
             base_url=self.open_ai_url,
             model=self.model_name,
             api_key=self.api_key,
-            temperature=self.temperature
+            temperature=self.temperature,
+            num_ctx=64000,
+            extract_reasoning=True
         )
 
         mcp_client = MultiServerMCPClient({
