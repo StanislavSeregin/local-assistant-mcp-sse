@@ -1,0 +1,32 @@
+services:
+    assistant:
+        image: assistant
+        container_name: assistant
+        restart: unless-stopped
+        build:
+            context: ./src/assistant
+            dockerfile: Dockerfile
+        depends_on:
+            - mcp-tools
+        ports:
+            - 8501:8501
+        environment:
+            - MCP_URL=http://mcp-tools:3000/sse
+            - OPEN_AI_URL=http://host.docker.internal:11434
+            - MODEL_NAME=qwen3:30b-a3b-q8_0
+            - API_KEY=ollama
+            - TEMPERATURE=0.0
+            - SYSTEM_PROMPT=/no_think You are a helpful AI.
+
+    mcp-tools:
+        image: mcp-tools
+        container_name: mcp-tools
+        restart: unless-stopped
+        build:
+            context: ./src/mcp-tools
+            dockerfile: Dockerfile
+        environment:
+            - ASPNETCORE_URLS=http://+:3000
+            - FSToolSettings__RootPath=/app/data
+        volumes:
+            - C:\Temp:/app/data
